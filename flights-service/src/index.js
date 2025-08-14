@@ -1,20 +1,12 @@
-require('dotenv').config();
+require('dotenv').config({ path: __dirname + '/../.env' });
+
 const express = require('express');
 const registerWithEureka = require('./eureka-client');
+const flightRoutes = require('./routes/flightRoutes');
 
 const app = express();
 app.use(express.json());
-
-// Flight data (mock)
-const flights = [
-  { id: 1, from: 'HYD', to: 'DEL', price: 4500 },
-  { id: 2, from: 'DEL', to: 'BOM', price: 3500 }
-];
-
-// API endpoint
-app.get('/flights', (req, res) => {
-  res.json(flights);
-});
+app.use('/flights', flightRoutes);
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {

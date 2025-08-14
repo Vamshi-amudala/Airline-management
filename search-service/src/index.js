@@ -19,8 +19,3 @@ app.listen(PORT, () => {
     registerWithEureka('search-service', PORT);
 });
 
-// POST /flights          # Add a new flight
-// GET /flights           # Get all flights
-// GET /flights/:id       # Get specific flight
-// PUT /flights/:id       # Update flight
-// DELETE /flights/:id    # Delete flight
