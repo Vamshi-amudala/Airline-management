@@ -1,7 +1,3 @@
-Alright! Let’s draft a **clean, professional README** for your microservices-based Airline Management System. I’ll include all your services, setup instructions, and usage. You can tweak the notification service later if needed.
-
----
-
 # Airline Management System (Microservices)
 
 This project is a **microservices-based Airline Management System** implemented with **Node.js**, **Express**, **MySQL**, and **Eureka service discovery**. It allows users to search for flights, book tickets, and manage bookings in a real-time manner.
