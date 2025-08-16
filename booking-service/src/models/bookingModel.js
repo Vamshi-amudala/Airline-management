@@ -26,13 +26,25 @@ const BookingModel = {
         );
       }
 
-      function insertBooking(userId) {
-        const sql = `
-          INSERT INTO bookings (user_id, flight_id, flight_date, status)
-          VALUES (?, ?, ?, 'booked')
-        `;
-        db.query(sql, [userId, flight_id, flight_date], callback);
-      }
+function insertBooking(userId) {
+  db.query(
+    'SELECT source, destination FROM airline_management.flights WHERE id = ?',
+    [flight_id],
+    (err, flightRows) => {
+      if (err) return callback(err);
+      if (flightRows.length === 0) return callback(new Error('Flight not found'));
+
+      const { source, destination } = flightRows[0];
+
+      const sql = `
+        INSERT INTO bookings (user_id, flight_id, flight_date, source, destination, status)
+        VALUES (?, ?, ?, ?, ?, 'booked')
+      `;
+      db.query(sql, [userId, flight_id, flight_date, source, destination], callback);
+    }
+  );
+}
+
     });
   },
 
@@ -43,25 +55,25 @@ const BookingModel = {
             f.flight_number, f.source, f.destination, f.airline, f.price
       FROM bookings b
       JOIN users u ON b.user_id = u.id
-      JOIN flights f ON b.flight_id = f.id
+      JOIN airline_management.flights f ON b.flight_id = f.id
       WHERE u.email = ?
 
     `;
     db.query(sql, [email], callback);
   },
-pdateUserDetails: (bookingId, userDetails, callback) => {
-  const { name, email, phone } = userDetails;
 
-  db.query('SELECT user_id FROM bookings WHERE id = ?', [bookingId], (err, result) => {
-    if (err) return callback(err);
-    if (result.length === 0) return callback(new Error('Booking not found'));
 
-    const userId = result[0].user_id;
+    updateUserDetails: (updateData, callback) => {
+        const { bookingId, name, email, phone } = updateData;
 
-    const sql = 'UPDATE users SET name = ?, email = ?, phone = ? WHERE id = ?';
-    db.query(sql, [name, email, phone, userId], callback);
-  });
-},
+        const sql = `
+            UPDATE users
+            SET name = ?, email = ?, phone = ?
+            WHERE id = ?
+        `;
+
+        db.query(sql, [name, email, phone, bookingId], callback);
+    },
 
   getById: (bookingId, callback) => {
     const sql = 'SELECT * FROM bookings WHERE id = ?';
