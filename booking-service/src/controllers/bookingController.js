@@ -9,21 +9,29 @@ const bookFlight = (req, res) => {
 };
 
 const getBookingsByEmail = (req, res) => {
-    const email = req.query.email; // pass email as query param
+    const email = req.query.email;
     BookingModel.getBookingsByEmail(email, (err, bookings) => {
         if (err) return res.status(500).json({ error: err.message });
         res.status(200).json({ bookings });
     });
 };
 
+const updateUserDetails = (req, res) => {
+    const bookingId = req.params.bookingId;
+    const { name, email, phone } = req.body;
+
+    BookingModel.updateUserDetails({ bookingId, name, email, phone }, (err, result) => {
+        if (err) return res.status(500).json({ error: err.message });
+
+        res.status(200).json({ message: "User details updated successfully" });
+    });
+};
 
 const updateTicket = (req, res) => {
     const bookingId = req.params.bookingId;
-    const { name, email, phone, newFlightId } = req.body; 
+    const { newFlightId } = req.body;
 
-    const updateData = { bookingId, name, email, phone, newFlightId };
-
-    BookingModel.updateBooking(updateData, (err, result) => {
+    BookingModel.updateBooking(bookingId, newFlightId, (err, result) => {
         if (err) {
             return res.status(500).json({ error: err.message });
         }
@@ -33,4 +41,5 @@ const updateTicket = (req, res) => {
 };
 
 
-module.exports = { bookFlight, getBookingsByEmail , updateTicket};
+
+module.exports = { bookFlight, getBookingsByEmail , updateTicket, updateUserDetails};

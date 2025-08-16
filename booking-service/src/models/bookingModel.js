@@ -97,25 +97,96 @@ const BookingModel = {
   },
 
 
-updateBooking: (updateData, callback) => {
-    const { bookingId, name, email, phone, newFlightId } = updateData;
+updateBooking: (bookingId, newFlightId, callback) => {
+  
+  db.query('SELECT flight_id, seat_number, user_id FROM bookings WHERE id = ?', [bookingId], (err, rows) => {
+    if (err) return callback(err);
+    if (rows.length === 0) return callback(new Error("Booking not found"));
 
-    db.query('SELECT user_id FROM bookings WHERE id = ?', [bookingId], (err, result) => {
+    const { flight_id: oldFlightId, seat_number: oldSeat } = rows[0];
+
+  
+    db.query(
+      'UPDATE flight_seats SET is_booked = FALSE WHERE flight_id = ? AND seat_number = ?', 
+      [oldFlightId, oldSeat], 
+      (err2) => {
+        if (err2) return callback(err2);
+
+       
+        const targetFlightId = newFlightId || oldFlightId;
+
+       
+        db.query(
+          'SELECT seat_number FROM flight_seats WHERE flight_id = ? AND is_booked = FALSE', 
+          [targetFlightId], 
+          (err3, seats) => {
+            if (err3) return callback(err3);
+            if (seats.length === 0) return callback(new Error("No seats available"));
+
+           
+            const randomIndex = Math.floor(Math.random() * seats.length);
+            const newSeat = seats[randomIndex].seat_number;
+
+            
+            db.query(
+              'SELECT departure_time, source, destination FROM airline_management.flights WHERE id = ?', 
+              [targetFlightId], 
+              (err4, flightRows) => {
+                if (err4) return callback(err4);
+
+                const { departure_time, source, destination } = flightRows[0];
+
+              
+                db.query(
+                  `UPDATE bookings 
+                   SET flight_id = ?, flight_time = ?, source = ?, destination = ?, seat_number = ?, status = 'booked' 
+                   WHERE id = ?`,
+                  [targetFlightId, departure_time, source, destination, newSeat, bookingId], 
+                  (err5) => {
+                    if (err5) return callback(err5);
+
+                   
+                    db.query(
+                      'UPDATE flight_seats SET is_booked = TRUE WHERE flight_id = ? AND seat_number = ?', 
+                      [targetFlightId, newSeat], 
+                      (err6) => {
+                        if (err6) return callback(err6);
+
+                        callback(null, {
+                          bookingId,
+                          oldFlight: oldFlightId,
+                          newFlight: targetFlightId,
+                          oldSeat,
+                          newSeat
+                        });
+                      }
+                    );
+                  }
+                );
+              }
+            );
+          }
+        );
+      }
+    );
+  });
+},
+
+
+
+updateUserDetails: ({ bookingId, name, email, phone }, callback) => {
+    db.query('SELECT user_id FROM bookings WHERE id = ?', [bookingId], (err, rows) => {
         if (err) return callback(err);
-        if (result.length === 0) return callback(new Error('Booking not found'));
+        if (rows.length === 0) return callback(new Error("Booking not found"));
 
-        const userId = result[0].user_id;
+        const userId = rows[0].user_id;
+
         db.query(
             'UPDATE users SET name = ?, email = ?, phone = ? WHERE id = ?',
             [name, email, phone, userId],
-            (err2) => {
+            (err2, result) => {
                 if (err2) return callback(err2);
-
-                db.query(
-                    'UPDATE bookings SET flight_id = ? WHERE id = ?',
-                    [newFlightId, bookingId],
-                    callback
-                );
+                callback(null, result);
             }
         );
     });
@@ -128,5 +199,6 @@ updateBooking: (updateData, callback) => {
   }
 };
 
+ 
 
 module.exports = BookingModel;
