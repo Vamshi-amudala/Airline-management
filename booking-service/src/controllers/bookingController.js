@@ -19,11 +19,11 @@ const getBookingsByEmail = (req, res) => {
 
 const updateTicket = (req, res) => {
     const bookingId = req.params.bookingId;
-    const { name, email, phone } = req.body; 
+    const { name, email, phone, newFlightId } = req.body; 
 
-    const updateData = { bookingId, name, email, phone };
+    const updateData = { bookingId, name, email, phone, newFlightId };
 
-    BookingModel.updateUserDetails(updateData, (err, result) => {
+    BookingModel.updateBooking(updateData, (err, result) => {
         if (err) {
             return res.status(500).json({ error: err.message });
         }
