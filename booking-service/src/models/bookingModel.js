@@ -192,6 +192,31 @@ updateUserDetails: ({ bookingId, name, email, phone }, callback) => {
     });
 },
 
+cancelBooking:(bookingId, callback) =>{
+
+  db.query(`select flight_id, seat_number from bookings where id =?`, [bookingId], (err,rows)=>{
+    if(err) return callback(err);
+    if(rows.length === 0) return callback(new Error("Booking not found"));
+
+    const {flight_id, seat_number} = rows[0];
+
+    db.query(`update bookings set status = "cancelled" where id = ?`, [bookingId],(err2)=>{
+      if(err2) return callback(err2);
+
+
+      db.query(`update flight_seats set is_booked = FALSE where flight_id = ? and seat_number = ?`,[flight_id, seat_number],(err3)=>{
+        if(err3) return callback(err3);
+
+        callback(null, {
+          message:"Booking cancelled successfully. !",
+          bookingId,
+          flight_id : flight_id,
+          seatReleased:seat_number
+        }); 
+      });
+    });
+  });
+},
 
   getById: (bookingId, callback) => {
     const sql = 'SELECT * FROM bookings WHERE id = ?';

@@ -40,6 +40,20 @@ const updateTicket = (req, res) => {
     });
 };
 
+const cancelBooking = (req,res)=>{
+    const bookingId = req.params.bookingId;
+
+    BookingModel.cancelBooking(bookingId, (err, result)=>{
+        if(err) return res.status(500).json({error:err.message});
+
+        res.status(200).json({
+        message: "Ticket cancelled successfully",
+        bookingId: result.bookingId,
+        flightId: result.flightId,
+        seatReleased: result.seatReleased
+        });
+    });
+};
 
 
-module.exports = { bookFlight, getBookingsByEmail , updateTicket, updateUserDetails};
+module.exports = { bookFlight, getBookingsByEmail , updateTicket, updateUserDetails, cancelBooking};
