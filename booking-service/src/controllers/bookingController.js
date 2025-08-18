@@ -1,10 +1,22 @@
 const BookingModel = require('../models/bookingModel');
+const { sendBookingNotification, sendUpdateNotification, sendCancelNotification } = require('../notificationHelpers');
 
-const bookFlight = (req, res) => {
+const bookFlight = async (req, res) => {
     const newBooking = req.body;
-    BookingModel.createBooking(newBooking, (err, result) => {
+
+    BookingModel.createBooking(newBooking, async (err, result) => {
         if (err) return res.status(500).json({ error: err.message });
-        res.status(200).json({ bookingId: result.insertId, ...newBooking });
+
+        const bookingId = result.insertId;
+        const bookingData = { ...newBooking, bookingId };
+
+        try {
+            await sendBookingNotification(newBooking, bookingData);
+        } catch (notifErr) {
+            console.error("Notification failed:", notifErr.message);
+        }
+
+        res.status(200).json({ bookingId, ...newBooking });
     });
 };
 
@@ -27,33 +39,42 @@ const updateUserDetails = (req, res) => {
     });
 };
 
-const updateTicket = (req, res) => {
+const updateTicket = async (req, res) => {
     const bookingId = req.params.bookingId;
     const { newFlightId } = req.body;
 
-    BookingModel.updateBooking(bookingId, newFlightId, (err, result) => {
-        if (err) {
-            return res.status(500).json({ error: err.message });
+    BookingModel.updateBooking(bookingId, newFlightId, async (err, result) => {
+        if (err) return res.status(500).json({ error: err.message });
+
+        try {
+            await sendUpdateNotification(result, result);
+        } catch (notifErr) {
+            console.error("Notification failed:", notifErr.message);
         }
 
         res.status(200).json({ message: "Ticket updated successfully", result });
     });
 };
 
-const cancelBooking = (req,res)=>{
+const cancelBooking = async (req, res) => {
     const bookingId = req.params.bookingId;
 
-    BookingModel.cancelBooking(bookingId, (err, result)=>{
-        if(err) return res.status(500).json({error:err.message});
+    BookingModel.cancelBooking(bookingId, async (err, result) => {
+        if (err) return res.status(500).json({ error: err.message });
+
+        try {
+            await sendCancelNotification(result, result);
+        } catch (notifErr) {
+            console.error("Notification failed:", notifErr.message);
+        }
 
         res.status(200).json({
-        message: "Ticket cancelled successfully",
-        bookingId: result.bookingId,
-        flightId: result.flightId,
-        seatReleased: result.seatReleased
+            message: "Ticket cancelled successfully",
+            bookingId: result.bookingId,
+            flightId: result.flightId,
+            seatReleased: result.seatReleased
         });
     });
 };
 
-
-module.exports = { bookFlight, getBookingsByEmail , updateTicket, updateUserDetails, cancelBooking};
+module.exports = { bookFlight, getBookingsByEmail, updateTicket, updateUserDetails, cancelBooking };
